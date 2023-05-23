@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,7 +44,6 @@ public class StrategyServiceImpl {
     private void strategyGroup(WeChatClient client, WXMessage message) {
         log.info("收到文字消息。来自群: {}，用户: {}，内容: {}", message.fromGroup.name, message.fromUser.name, message.content);
         String prefix = this.getConfig().get(RedisConstant.Prefix);
-        log.info("指定配置前缀：{}", prefix);
         //是否包含指定的指令信息 不包含跳过即可
         String content = message.content;
         prefix = prefix + WxMsg.AT_ME_SPACE;
@@ -57,22 +57,30 @@ public class StrategyServiceImpl {
             return;
         }
         content = content.replaceAll(prefix, "");
-        String keyWord = null;
 
-        for (String key : commandService.map.keySet()) {
-            if (content.contains(key)) {
-                keyWord = key;
+        for (String keyWord : commandService.textMap.keySet()) {
+            //匹配某命令
+            if (content.contains(keyWord)) {
+                String response = commandService.textMap.get(keyWord).apply(content);
+                if (response != null) {
+                    client.sendText(message.fromGroup, MsgUtil.quote(message, response));
+                }
                 break;
             }
         }
 
-        //匹配某命令
-        if (keyWord != null) {
-            String response = commandService.map.get(keyWord).apply(content);
-            if (response != null) {
-                client.sendText(message.fromGroup, MsgUtil.quote(message, response));
+
+        for (String keyWord : commandService.imgMap.keySet()) {
+            //匹配某命令
+            if (content.contains(keyWord)) {
+                File file = commandService.imgMap.get(keyWord).apply(content);
+                if (file != null) {
+                    client.sendFile(message.fromGroup, file);
+                }
+                break;
             }
         }
+
     }
 
 
