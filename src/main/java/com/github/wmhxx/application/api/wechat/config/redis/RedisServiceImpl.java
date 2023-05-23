@@ -1,14 +1,11 @@
-package com.github.wmhxx.application.api.wechat.config;
+package com.github.wmhxx.application.api.wechat.config.redis;
 
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -23,11 +20,6 @@ public class RedisServiceImpl implements RedisService {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
-
-    /**
-     * 分布式锁过期时间，单位秒
-     */
-    private static final Long DEFAULT_LOCK_EXPIRE_TIME = 4L;
 
     @Override
     public void set(String key, Object value, long time) {
@@ -243,8 +235,19 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
+    public Set<Object> sGet(String key) {
+        return redisTemplate.opsForSet().members(key);
+    }
+
+    @Override
     public Long lSize(String key) {
         return redisTemplate.opsForList().size(key);
+    }
+
+    @Override
+    public String lRightPop(String key) {
+        Object value = redisTemplate.opsForList().rightPop(key);
+        return String.valueOf(value);
     }
 
     @Override
@@ -310,56 +313,5 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public Set<ZSetOperations.TypedTuple<Object>> zReverseRangeWithScores(String key, long start, long end) {
         return redisTemplate.opsForZSet().reverseRangeWithScores(key, start, end);
-    }
-
-    @Override
-    public Long getTime(String key) {
-        return redisTemplate.opsForValue().getOperations().getExpire(key);
-    }
-
-    @Override
-    public boolean tryLock(String key,String value, Duration timeout){
-        long waitMills = timeout.toMillis();
-        long currentTimeMillis = System.currentTimeMillis();
-        do {
-            boolean lock = lock(key, value, DEFAULT_LOCK_EXPIRE_TIME);
-            if (lock) {
-                return true;
-            }
-            try {
-                Thread.sleep(1L);
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-            }
-        } while (System.currentTimeMillis() < currentTimeMillis + waitMills);
-        return false;
-    }
-
-    /**
-     * 直接加锁
-     * @param key
-     * @param value
-     * @param expire
-     * @return
-     */
-    public boolean lock(String key,String value, Long expire){
-        String luaScript = "if redis.call('setnx', KEYS[1], ARGV[1]) == 1 then return redis.call('expire', KEYS[1], ARGV[2]) else return 0 end";
-        RedisScript<Long> redisScript = new DefaultRedisScript<>(luaScript, Long.class);
-        Long result = redisTemplate.execute(redisScript, Collections.singletonList(key), value, String.valueOf(expire));
-        return result.equals(Long.valueOf(1));
-    }
-
-    /**
-     * 释放锁
-     * @param key
-     * @param value
-     * @return
-     */
-    @Override
-    public boolean releaseLock(String key,String value){
-        String luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
-        RedisScript<Long> redisScript = new DefaultRedisScript<>(luaScript, Long.class);
-        Long result = redisTemplate.execute(redisScript, Collections.singletonList(key),value);
-        return result.equals(Long.valueOf(1));
     }
 }

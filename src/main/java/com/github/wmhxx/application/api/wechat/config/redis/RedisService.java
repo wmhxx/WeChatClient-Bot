@@ -1,8 +1,7 @@
-package com.github.wmhxx.application.api.wechat.config;
+package com.github.wmhxx.application.api.wechat.config.redis;
 
 import org.springframework.data.redis.core.ZSetOperations;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -231,9 +230,25 @@ public interface RedisService {
     List<Object> lRangeAll(String key);
 
     /**
+     * 根据key获取Set中的所有值
+     *
+     * @param key 关键
+     * @return {@link Set}<{@link Object}>
+     */
+    Set<Object> sGet(String key);
+
+    /**
      * 获取List结构的长度
      */
     Long lSize(String key);
+
+    /**
+     * 移除并获取列表最后一个元素
+     *
+     * @param key 关键
+     * @return {@link String}
+     */
+    String lRightPop(String key);
 
     /**
      * 根据索引获取List中的属性
@@ -327,9 +342,4 @@ public interface RedisService {
      */
     Set<ZSetOperations.TypedTuple<Object>> zReverseRangeWithScores(String key, long start, long end);
 
-    Long getTime(String key);
-
-    boolean releaseLock(String lockKey,String value);
-
-    boolean tryLock(String key,String value, Duration timeout);
 }
