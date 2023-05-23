@@ -35,3 +35,5 @@ mvnw
 mvnw.cmd
 src/test/**
 .mvn
+image-**
+xlogger.log
