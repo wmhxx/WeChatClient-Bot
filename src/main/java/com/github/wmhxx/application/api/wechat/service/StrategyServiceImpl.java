@@ -1,5 +1,6 @@
 package com.github.wmhxx.application.api.wechat.service;
 
+import cn.hutool.json.JSONUtil;
 import com.github.wmhxx.application.api.wechat.WeChatClient;
 import com.github.wmhxx.application.api.wechat.config.redis.RedisConstant;
 import com.github.wmhxx.application.api.wechat.config.redis.RedisServiceImpl;
@@ -33,6 +34,7 @@ public class StrategyServiceImpl {
     private CommandServiceImpl commandService;
 
     public void getClient(WeChatClient client, WXMessage message) {
+        log.info("Message Detail ： {}", JSONUtil.toJsonStr(message));
         //群组逻辑策略
         if (message instanceof WXText && message.fromUser != null && !message.fromUser.id
                 .equals(client.userMe().id) && message.fromGroup != null) {

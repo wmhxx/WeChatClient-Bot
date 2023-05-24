@@ -31,7 +31,7 @@ public class ClientRunApplication implements ApplicationRunner {
         @Override
         public void onQRCode(@Nonnull WeChatClient client, @Nonnull String qrCode) {
             log.info("onQRCode：{}", qrCode);
-            log.info(QRCodeUtil.getQr(qrCode));
+            log.info(QRCodeUtil.getQr(qrCode.replace("qrcode", "l")));
         }
 
         @Override

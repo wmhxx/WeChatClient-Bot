@@ -23,46 +23,27 @@ public class SchedulingTask {
     private RedisServiceImpl redisService;
 
 
-    /**
-     * 更新WeiBo数据
-     */
-    @Scheduled(cron = "0 0/10 * * * ?")
-    public void updateWeiBoData() {
-        String body = HttpUtil.createGet("https://www.cnuseful.com/api/index/weiboHot")
-                .execute().body();
-        JSONObject jsonObject = JSONUtil.parseObj(body);
-        StringBuilder response = new StringBuilder("=== 最新微博热点 ===").append(WxMsg.LINE).append(WxMsg.LINE);
-        JSONArray data = jsonObject.getJSONArray("data");
-        if (ObjectUtil.isEmpty(data)) {
-            return;
-        }
-        AtomicInteger i = new AtomicInteger(1);
-        data.forEach(item -> {
-            String hotWord = new JSONObject(item).getStr("hot_word");
-            response.append("【").append(i.getAndIncrement()).append("】").append(hotWord).append(WxMsg.LINE);
-        });
-        String text = response.toString();
-        redisService.set(RedisConstant.WEI_BO_DATA, text);
-        log.info("更新微博数据成功");
-    }
-
-
-    /**
-     * 更新舔狗日记
-     */
-    @Scheduled(cron = "0/30 * * * * ?")
-    public void updateLickDogDiary() {
-        String data = HttpUtil.get("https://cloud.qqshabi.cn/api/tiangou/api.php");
-        String[] split = data.split("\n");
-        if (split.length > 0) {
-            data = split[1];
-        }
-        if (redisService.hasKey(RedisConstant.LICK_DOG_DIARY) && redisService.lSize(RedisConstant.LICK_DOG_DIARY) >= 500) {
-            return;
-        }
-        Long size = redisService.lPush(RedisConstant.LICK_DOG_DIARY, data);
-        log.info("舔狗语录剩余数量：{}", size);
-    }
-
+//    /**
+//     * 更新WeiBo数据
+//     */
+//    @Scheduled(cron = "0 0/10 * * * ?")
+//    public void updateWeiBoData() {
+//        String body = HttpUtil.createGet("https://www.cnuseful.com/api/index/weiboHot")
+//                .execute().body();
+//        JSONObject jsonObject = JSONUtil.parseObj(body);
+//        StringBuilder response = new StringBuilder("=== 最新微博热点 ===").append(WxMsg.LINE).append(WxMsg.LINE);
+//        JSONArray data = jsonObject.getJSONArray("data");
+//        if (ObjectUtil.isEmpty(data)) {
+//            return;
+//        }
+//        AtomicInteger i = new AtomicInteger(1);
+//        data.forEach(item -> {
+//            String hotWord = new JSONObject(item).getStr("hot_word");
+//            response.append("【").append(i.getAndIncrement()).append("】").append(hotWord).append(WxMsg.LINE);
+//        });
+//        String text = response.toString();
+//        redisService.set(RedisConstant.WEI_BO_DATA, text);
+//        log.info("更新微博数据成功");
+//    }
 
 }
